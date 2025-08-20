@@ -1,0 +1,14 @@
+/home/mairo/Giraffe/bin/Debug/net9.0/Giraffe
+/home/mairo/Giraffe/bin/Debug/net9.0/Giraffe.deps.json
+/home/mairo/Giraffe/bin/Debug/net9.0/Giraffe.runtimeconfig.json
+/home/mairo/Giraffe/bin/Debug/net9.0/Giraffe.dll
+/home/mairo/Giraffe/bin/Debug/net9.0/Giraffe.pdb
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.GeneratedMSBuildEditorConfig.editorconfig
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.AssemblyInfoInputs.cache
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.AssemblyInfo.cs
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.csproj.CoreCompileInputs.cache
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.dll
+/home/mairo/Giraffe/obj/Debug/net9.0/refint/Giraffe.dll
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.pdb
+/home/mairo/Giraffe/obj/Debug/net9.0/Giraffe.genruntimeconfig.cache
+/home/mairo/Giraffe/obj/Debug/net9.0/ref/Giraffe.dll
