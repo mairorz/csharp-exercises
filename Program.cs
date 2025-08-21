@@ -1,4 +1,8 @@
 ﻿using System;
+using ArrayMultidimensional;
+using AgendaContactosBasica;
+using BibliotecaBasica;
+using BancoBasico;
 
 namespace Giraffe
 
@@ -7,12 +11,19 @@ namespace Giraffe
     {
         static void Main(string[] args)
         {
+            //Ejercicios para poner en practica lo aprendido
+            //Banco.Ejecutar();
+            //Biblioteca.Ejecutar();
+            //AgendaContactos.Ejecutar();
             //Ejercicio2.Ejecutar();
             //Ejercicio1.Ejecutar();
+
+            //Repaso de conceptos básicos
             //Program5.Ejecutar();
             //Program4.Ejecutar();
             //Program3.Ejecutar();
-            Program2.Ejecutar();
+            //Program2.Ejecutar();
+            //Program6.Ejecutar();
 
             /*
             Console.WriteLine();
