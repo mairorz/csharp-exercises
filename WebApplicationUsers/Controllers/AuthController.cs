@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebApplicationUsers.Data;
 using WebApplicationUsers.Models;
-using WebApplicationUsers.Services;
 
 namespace WebApplicationUsers.Controllers;
 
@@ -8,64 +9,52 @@ namespace WebApplicationUsers.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    private readonly AppDbContext _db;
+    public AuthController(AppDbContext db) => _db = db;
+
     public class LoginDto
     {
-        public string Username { get; set; } = string.Empty;
-        public string? Correo { get; set; }
+        public string Correo { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 
     [HttpPost("save")]
-    public ActionResult<User> RegisterUser([FromBody] User userInsert)
+    public async Task<ActionResult<User>> RegisterUser([FromBody] User userInsert)
     {
         if (userInsert == null)
             return BadRequest("No se recibió información del usuario.");
 
-        if (string.IsNullOrWhiteSpace(userInsert.Username))
-            return BadRequest("El Username es obligatorio.");
+        if (string.IsNullOrWhiteSpace(userInsert.Correo) || string.IsNullOrWhiteSpace(userInsert.Password))
+            return BadRequest("Correo y Password son obligatorios.");
 
-        var exists = UserDataStore.Current.Users
-            .Any(u => u.Username.Equals(userInsert.Username, System.StringComparison.OrdinalIgnoreCase));
+        var exists = await _db.users.AnyAsync(u =>
+            u.Correo == userInsert.Correo || u.Username == userInsert.Username);
+
         if (exists)
-            return Conflict("Ya existe un usuario con ese Username.");
+            return Conflict("Ya existe un usuario con ese correo o username.");
 
-        var maxUsersId = UserDataStore.Current.Users.Any()
-            ? UserDataStore.Current.Users.Max(x => x.Id)
-            : 0;
-
-        var newUser = new User
-        {
-            Id = maxUsersId + 1,
-            Nombres = userInsert.Nombres,
-            Apellidos = userInsert.Apellidos,
-            Correo = userInsert.Correo,
-            Telefono = userInsert.Telefono,
-            Username = userInsert.Username
-        };
-
-        UserDataStore.Current.Users.Add(newUser);
+        _db.users.Add(userInsert);
+        await _db.SaveChangesAsync();
 
         return CreatedAtAction(
             actionName: nameof(UserController.GetUser),
             controllerName: "User",
-            routeValues: new { userId = newUser.Id },
-            value: newUser
+            routeValues: new { id = userInsert.Id },
+            value: userInsert
         );
     }
 
     [HttpPost("login")]
-    public ActionResult<User> Login([FromBody] LoginDto credentials)
+    public async Task<ActionResult<User>> Login([FromBody] LoginDto credentials)
     {
-        if (credentials == null || string.IsNullOrWhiteSpace(credentials.Username))
-            return BadRequest("Debe enviar el Username.");
+        if (credentials == null ||
+            string.IsNullOrWhiteSpace(credentials.Correo) ||
+            string.IsNullOrWhiteSpace(credentials.Password))
+            return BadRequest("Debe enviar correo y password.");
 
-        var query = UserDataStore.Current.Users
-            .Where(u => u.Username.Equals(credentials.Username, System.StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(credentials.Correo))
-            query = query.Where(u => (u.Correo ?? string.Empty)
-                .Equals(credentials.Correo, System.StringComparison.OrdinalIgnoreCase));
-
-        var user = query.FirstOrDefault();
+        var user = await _db.users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Correo == credentials.Correo && u.Password == credentials.Password);
 
         if (user == null)
             return Unauthorized("Credenciales inválidas.");

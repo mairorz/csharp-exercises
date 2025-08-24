@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebApplicationUsers.Data;
 using WebApplicationUsers.Models;
-using WebApplicationUsers.Services;
 
 namespace WebApplicationUsers.Controllers;
 
@@ -8,47 +9,55 @@ namespace WebApplicationUsers.Controllers;
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
+    private readonly AppDbContext _db;
+    public UserController(AppDbContext db) => _db = db;
+
     [HttpGet("list")]
-    public ActionResult<IEnumerable<User>> GetUsers()
+    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
-        return Ok(UserDataStore.Current.Users);
+        var users = await _db.users.AsNoTracking().ToListAsync();
+        return Ok(users);
     }
 
-    [HttpGet("search/{userId}")]
-    public ActionResult<User> GetUser(int userId)
+    [HttpGet("search/{id:int}")]
+    public async Task<ActionResult<User>> GetUser(int id)
     {
-        var user = UserDataStore.Current.Users.FirstOrDefault(x => x.Id == userId);
-
-        if (user == null)
-            return NotFound("El usuario solicitado no existe.");
-
-        return Ok(user);
+        var u = await _db.users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        return u is null ? NotFound("No existe.") : Ok(u);
     }
 
-    [HttpPut("update/{userId}")]
-    public ActionResult PutUser([FromRoute] int userId, [FromBody] User userInsert)
+    [HttpPost("create")]
+    public async Task<ActionResult<User>> Create([FromBody] User dto)
     {
-        var user = UserDataStore.Current.Users.FirstOrDefault(x => x.Id == userId);
-        if (user == null)
-            return NotFound("El usuario solicitado no existe.");
+        _db.users.Add(dto);
+        await _db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetUser), new { id = dto.Id }, dto);
+    }
 
-        user.Nombres  = userInsert.Nombres;
-        user.Apellidos = userInsert.Apellidos;
-        user.Correo    = userInsert.Correo;
-        user.Telefono  = userInsert.Telefono;
-        user.Username  = userInsert.Username;
+    [HttpPut("update/{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] User dto)
+    {
+        var u = await _db.users.FindAsync(id);
+        if (u is null) return NotFound();
 
+        u.Nombres  = dto.Nombres;
+        u.Apellidos= dto.Apellidos;
+        u.Correo   = dto.Correo;
+        u.Telefono = dto.Telefono;
+        u.Username = dto.Username;
+        u.Password = dto.Password;
+
+        await _db.SaveChangesAsync();
         return NoContent();
     }
-    
-    [HttpDelete("delete/{id}")]
-    public ActionResult DeleteUser(int id)
-    {
-        var user = UserDataStore.Current.Users.FirstOrDefault(u => u.Id == id);
-        if (user == null)
-            return NotFound("No existe un usuario con ese Id.");
 
-        UserDataStore.Current.Users.Remove(user);
+    [HttpDelete("delete/{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var u = await _db.users.FindAsync(id);
+        if (u is null) return NotFound();
+        _db.users.Remove(u);
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 }
