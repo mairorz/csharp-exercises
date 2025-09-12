@@ -1,11 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using WebApplicationServices.Models;
-
 namespace WebApplicationUsers.Data;
 
-public class AppDbContext : DbContext
+public class ApplicationDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
 

@@ -1,15 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using WebApplicationUsers.Data;
-
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-
-var cs = builder.Configuration.GetConnectionString("Connection");
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
+builder.Services.AddDbContext<AppDbContext>
+(
+    opt => opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+);
 
 var app = builder.Build();
 
