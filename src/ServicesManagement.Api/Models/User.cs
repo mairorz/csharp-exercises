@@ -7,6 +7,8 @@ public class User
 {
     public int Id { get; set; }
 
+    public string Username { get; set; } = null!;
+
     public string Name { get; set; } = null!;
 
     public string Surname { get; set; } = null!;
@@ -14,7 +16,7 @@ public class User
     [Column("password_hash")]
     public string PasswordHash { get; set; } = null!;
 
-    public string Phone { get; set; } = null!;
+    public string? Phone { get; set; }
 
     public string Email { get; set; } = null!;
 

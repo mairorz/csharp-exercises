@@ -17,7 +17,7 @@ public class Invoice
     public DateTime IssueDate { get; set; }
 
     [Column("paid_date")]
-    public DateTime PaidDate { get; set; }
+    public DateTime? PaidDate { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }

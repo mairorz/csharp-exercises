@@ -1,154 +1,87 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServicesManagement.Api.Data;
-using ServicesManagement.Api.Models;
+using ServicesManagement.Api.Dtos;
 
 namespace ServicesManagement.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
+[Authorize(Roles = "admin")]
 public class UserController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
-    public UserController(ApplicationDbContext context)
+    private readonly IMapper _mapper;
+
+    public UserController(ApplicationDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     [HttpGet("getAll")]
-    public async Task<ActionResult<IEnumerable<User>>> GetAll()
+    public async Task<ActionResult<IEnumerable<GetUserDto>>> GetAll()
     {
-        var result = await _context.Users
-                    .Where(u => u.Status == "active")
-                    .Select(u => new
-                    {
-                        UserId = u.Id,
-                        UserName = u.Name,
-                        UserSurname = u.Surname,
-                        UserPhone = u.Phone,
-                        UserEmail = u.Email,
-                        UserRole = u.Role,
-                        UserStatus = u.Status,
-                        UserCreatedAt = u.CreatedAt,
-                        UserUpdatedAt = u.UpdatedAt
-                    })
-                    .ToListAsync();
+        var users = await _context.Users.ToListAsync();
 
-        return Ok(result);
-    }
+        var usersDto = _mapper.Map<IEnumerable<GetUserDto>>(users);
 
-    [HttpGet("getAll/inactive")]
-    public async Task<ActionResult<IEnumerable<User>>> GetAllInactive()
-    {
-        var result = await _context.Users
-                    .Where(u => u.Status == "inactive")
-                    .Select(u => new
-                    {
-                        UserId = u.Id,
-                        UserName = u.Name,
-                        UserSurname = u.Surname,
-                        UserPhone = u.Phone,
-                        UserEmail = u.Email,
-                        UserRole = u.Role,
-                        UserStatus = u.Status,
-                        UserCreatedAt = u.CreatedAt,
-                        UserUpdatedAt = u.UpdatedAt
-                    })
-                    .ToListAsync();
+        var active = usersDto.Where(u => u.Status == "active").ToList();
 
-        return Ok(result);
+        var inactive = usersDto.Where(u => u.Status == "inactive").ToList();
+
+        var response = new
+        {
+            Users = usersDto.Count(),
+            Actives = active.Count,
+            Inactives = inactive.Count,
+            ActiveUsers = active,
+            InactiveUsers = inactive
+        };
+
+        return Ok(response);
     }
 
 
     [HttpGet("getById/{id:int}")]
-    public async Task<ActionResult<User>> GetById(int id)
+    public async Task<ActionResult<GetUserDto>> GetById(int id)
     {
-        var result = await _context.Users
-                    .Where(u => u.Id == id)
-                    .Select(u => new User
-                    {
-                        Id = u.Id,
-                        Name = u.Name,
-                        Surname = u.Surname,
-                        Phone = u.Phone,
-                        Email = u.Email,
-                        Role = u.Role,
-                        Status = u.Status,
-                        CreatedAt = u.CreatedAt,
-                        UpdatedAt = u.UpdatedAt
-                    })
-                    .FirstOrDefaultAsync();
+        var user = await _context.Users.FindAsync(id);
 
-        if (result == null)
+        if (user is null)
         {
             return NotFound();
         }
 
-        if (result.Status == "inactive")
+        if (user.Status == "inactive")
         {
-            return NotFound(
+            return Conflict
+            (   
                 new
-                {
-                    id,
-                    msg = "Usuario inactivo"
+                { 
+                    field = "status",
+                    msg = "El usuario se encuentra inactivo"
                 }
             );
         }
 
-        return Ok(result);
-    }
-
-    [HttpPost("add")]
-    public async Task<ActionResult<User>> Add(User newUser)
-    {
-        var emailExist = await _context.Users.AnyAsync(u => u.Email == newUser.Email);
-        if (emailExist)
-        {
-            return Conflict
-            (
-                new
-                {
-                    field = "email",
-                    msg = "Ya existe el correo ingresado"
-                }
-            );    
-        }
-
-        _context.Users.Add(newUser);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction
-        (
-            nameof(Add),
-            new { id = newUser.Id },
-            newUser
-        );
+        var userDto = _mapper.Map<GetUserDto>(user);
+        return Ok(userDto);
     }
 
     [HttpPut("update/{id:int}")]
-    public async Task<IActionResult> Update(int id, User updatedUser)
+    public async Task<IActionResult> Update(int id, UpdateUserDto updatedUserDto)
     {
         var user = await _context.Users.FindAsync(id);
 
-        if (user == null)
+        if (user is null)
         { 
             return NotFound();   
         }
 
-        var emailExist = await _context.Users.AnyAsync(u => u.Email == updatedUser.Email);
-        if (emailExist)
-        {
-            return Conflict
-            (
-                new
-                {
-                    field = "email",
-                    msg = "Ya existe el correo ingresado"
-                }
-            );    
-        }
-        
         if (user.Status == "inactive")
         {
             return Problem
@@ -158,17 +91,93 @@ public class UserController : ControllerBase
                 detail: "No se puede modificar mientras esté inactivo"
             );
         }
+        
+        if (updatedUserDto.Username != null && updatedUserDto.Username != user.Username)
+        {
+            var usernameExist = await _context.Users.AnyAsync(u => u.Username == updatedUserDto.Username && u.Id != id);
+            if (usernameExist)
+            {
+                return Conflict
+                (
+                    new
+                    {
+                        field = "username",
+                        msg = "Ya existe el nombre de usuario ingresado"
+                    }
+                );    
+            }
+        }
 
-        user.Name = updatedUser.Name;
-        user.Surname = updatedUser.Surname;
-        user.PasswordHash = updatedUser.PasswordHash;
-        user.Phone = updatedUser.Phone;
-        user.Email = updatedUser.Email;
+        if (updatedUserDto.Email != null && updatedUserDto.Email != user.Email)
+        {
+            var emailExist = await _context.Users.AnyAsync(u => u.Email == updatedUserDto.Email && u.Id != id);
+            if (emailExist)
+            {
+                return Conflict
+                (
+                    new
+                    {
+                        field = "email",
+                        msg = "Ya existe el correo ingresado"
+                    }
+                );
+            }
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserDto.PasswordHash))
+        {
+            if (BCrypt.Net.BCrypt.Verify(updatedUserDto.PasswordHash, user.PasswordHash))
+            {
+                return Conflict
+                (
+                    new
+                    {
+                        field = "password",
+                        msg = "La nueva contraseña no puede ser igual a la actual"
+                    }
+                );
+            }
+        
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updatedUserDto.PasswordHash);
+        }
+        
+        if (!string.IsNullOrEmpty(updatedUserDto.Username)) 
+        {
+            user.Username = updatedUserDto.Username;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserDto.Name))
+        {
+            user.Name = updatedUserDto.Name;
+        }
+        
+        if (!string.IsNullOrEmpty(updatedUserDto.Surname))
+        {
+            user.Surname = updatedUserDto.Surname;
+        }
+        
+        if (!string.IsNullOrEmpty(updatedUserDto.Phone))
+        {
+            user.Phone = updatedUserDto.Phone;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserDto.Email))
+        {
+            user.Email = updatedUserDto.Email;
+        }
+
+        if (!string.IsNullOrEmpty(updatedUserDto.PasswordHash))
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updatedUserDto.PasswordHash); ;
+        }
+
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        var userResponseDto = _mapper.Map<GetUserDto>(updatedUserDto);
+
+        return Ok(userResponseDto);
     }
 
     [HttpPatch("disable/{id:int}")]

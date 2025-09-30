@@ -18,5 +18,5 @@ public class Inputs
 
     public ICollection<Consumption> Consumptions { get; set; } = new List<Consumption>();
 
-    public InputsCategories? InputsCategories { get; set; }
+    public InputsCategories? Category { get; set; }
 }

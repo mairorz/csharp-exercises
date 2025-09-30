@@ -27,5 +27,5 @@ public class Purchases
 
     public Supplier? Supplier { get; set; }
 
-    public Inputs? Inputs { get; set; }
+    public Inputs? Input { get; set; }
 }

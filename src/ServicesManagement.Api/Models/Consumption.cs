@@ -20,5 +20,5 @@ public class Consumption
 
     public WorkOrder? WorkOrder { get; set; }
 
-    public Inputs? Inputs { get; set; }
+    public Inputs? Input { get; set; }
 }
