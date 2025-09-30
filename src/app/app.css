@@ -1,0 +1,17 @@
+.container { 
+    max-width: 960px; 
+    margin: 0 auto; 
+    padding: 1rem; 
+}
+
+header { 
+    display:flex; 
+    align-items:center; 
+    justify-content:space-between;
+}
+
+nav a { 
+    margin-right:.10rem; 
+    text-decoration:none;
+    color:white
+}

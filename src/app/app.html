@@ -1,0 +1,34 @@
+<header class="site-header">
+  <a routerLink="/" class="brand" style="margin-left: 10px;">Services Management</a>
+  <div class="container cluster">
+    <nav class="nav cluster">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+      <a routerLink="/operations" routerLinkActive="active">Operaciones</a>
+      <a routerLink="/finance" routerLinkActive="active">Finanzas</a>
+      <a routerLink="/catalogs" routerLinkActive="active">Catálogos</a>
+    </nav>
+  </div>
+  <a routerLink="/" class="logo-link">
+    <img src="usuario.png" alt="User image" class="logo-img">
+  </a>
+</header>
+
+<div class="page-layout">
+  
+  <aside class="sidebar stack">
+    <div class="card">
+      <p class="brand">Menú Principal</p>
+    </div>
+    <nav class="nav cluster">
+      <a>Mis facturas</a>
+      <a>Reportes</a>
+      <a>Configuración</a>
+      <a class="logout brand">Cerrar sesión</a>
+    </nav>
+  </aside>
+
+  <main class="main-content stack mt-6">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>
